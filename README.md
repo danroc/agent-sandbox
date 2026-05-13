@@ -7,16 +7,16 @@ the sandbox home lives at `~/.agent-sandbox/home`.
 ## Bootstrap
 
 ```sh
-# 1. Clone into ~/.agent-sandbox so the home mount lives alongside the repo.
+# 1. Clone into ~/.agent-sandbox so the home mount lives alongside the repo
 git clone git@github.com:danroc/agent-sandbox.git ~/.agent-sandbox
 
-# 2. Symlink the launcher onto your PATH.
+# 2. Symlink the launcher onto your PATH
 ln -s ~/.agent-sandbox/agent ~/.local/bin/agent
 
-# 3. Build the image.
+# 3. Build the image
 agent update
 
-# 4. Set git identity inside the sandbox home (persists across runs).
+# 4. Set git identity inside the sandbox home (persists across runs)
 agent bash git config --global user.name  "Your Name"
 agent bash git config --global user.email "you@example.com"
 ```
