@@ -1,8 +1,8 @@
 # agent-sandbox
 
-Run AI coding CLIs (Claude Code, opencode, pi, codex) inside a sandboxed
-Docker container with an isolated `$HOME`. The current directory is mounted
-as `/workspace`; the sandbox home lives at `~/.agent-sandbox/home`.
+Run AI coding CLIs (Claude Code, opencode, pi, codex) inside a sandboxed Docker
+container with an isolated `$HOME`. The current directory is mounted as `/workspace`;
+the sandbox home lives at `~/.agent-sandbox/home`.
 
 ## Bootstrap
 
