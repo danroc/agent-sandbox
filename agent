@@ -62,9 +62,9 @@ Options:
   -p, --publish SPEC    Publish a container port (repeatable). A bare port
                         number maps host:container 1-to-1; full docker -p
                         syntax also works:
-                          -p 3000                   # host 3000 -> container 3000
-                          -p 8080:80                # host 8080 -> container 80
-                          -p 127.0.0.1:3000:3000    # bind to loopback only
+                          -p 3000                  # host 3000 -> container 3000
+                          -p 8080:80               # host 8080 -> container 80
+                          -p 127.0.0.1:3000:3000   # bind to loopback only
 
 Commands:
   bash      [args...]   Open an interactive bash shell (default), forwarding args
@@ -82,12 +82,12 @@ Environment:
   Image:          $IMAGE
 
 Examples:
-  agent                           # Open a shell
-  agent claude                    # Start Claude Code
-  agent claude -p "explain repo"  # One-shot Claude prompt
-  agent -p 5173 bash              # Expose a dev server port to the host
-  agent versions                  # Show tool versions
-  agent update                    # Rebuild the image
+  agent                            # Open a shell
+  agent claude                     # Start Claude Code
+  agent claude -p "explain repo"   # One-shot Claude prompt
+  agent -p 5173 bash               # Expose a dev server port to the host
+  agent versions                   # Show tool versions
+  agent update                     # Rebuild the image
 EOF
 }
 
