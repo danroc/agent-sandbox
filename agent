@@ -12,6 +12,37 @@ SANDBOX_ROOT="$HOME/.agent-sandbox"
 SANDBOX_HOME="$SANDBOX_ROOT/home"
 IMAGE="local/agent-sandbox:latest"
 
+usage() {
+  cat <<EOF
+agent — Run AI coding agents in a sandboxed Docker container
+
+Usage:
+  agent [command] [args...]
+
+Commands:
+  shell                 Open an interactive bash shell in the sandbox (default)
+  claude    [args...]   Run Claude Code, forwarding args
+  opencode  [args...]   Run opencode, forwarding args
+  pi        [args...]   Run pi, forwarding args
+  codex     [args...]   Run codex, forwarding args
+  versions              Print versions of the bundled tools
+  update                Rebuild the sandbox image from $SANDBOX_ROOT
+  help, -h, --help      Show this message
+
+Environment:
+  Project mount:  \$PWD            -> /workspace
+  Home mount:     $SANDBOX_HOME -> /home/agent
+  Image:          $IMAGE
+
+Examples:
+  agent                          # Open a shell
+  agent claude                   # Start Claude Code
+  agent claude -p "explain repo" # One-shot Claude prompt
+  agent versions                 # Show tool versions
+  agent update                   # Rebuild the image
+EOF
+}
+
 mkdir -p "$SANDBOX_HOME"
 chmod 700 "$SANDBOX_HOME"
 
@@ -41,11 +72,6 @@ update)
   exit 0
   ;;
 
-rebuild)
-  docker build -t "$IMAGE" "$SANDBOX_ROOT"
-  exit 0
-  ;;
-
 versions)
   docker run --rm -it \
     --env HOME=/home/agent \
@@ -63,8 +89,15 @@ versions)
   exit 0
   ;;
 
+help | -h | --help)
+  usage
+  exit 0
+  ;;
+
 *)
-  echo "Usage: agent {shell|claude|opencode|pi|codex|update|rebuild|versions} [args...]"
+  echo "agent: unknown command '$AGENT'" >&2
+  echo >&2
+  usage >&2
   exit 1
   ;;
 
