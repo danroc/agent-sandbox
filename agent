@@ -2,6 +2,13 @@
 
 set -euo pipefail
 
+PROJECT_DIR="$(pwd)"
+PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
+
+SANDBOX_ROOT="$HOME/.agent-sandbox"
+SANDBOX_HOME="$SANDBOX_ROOT/home"
+IMAGE="local/agent-sandbox:latest"
+
 # Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
 # of picking a random host port. Anything with a ":" or other characters passes through
 # unchanged.
@@ -43,13 +50,6 @@ shift || true
 if [[ "$AGENT" == "bash" && $# -gt 0 && "$1" != "-"* ]]; then
     set -- -c 'exec "$@"' bash "$@"
 fi
-
-PROJECT_DIR="$(pwd)"
-PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
-
-SANDBOX_ROOT="$HOME/.agent-sandbox"
-SANDBOX_HOME="$SANDBOX_ROOT/home"
-IMAGE="local/agent-sandbox:latest"
 
 usage() {
     cat <<EOF
