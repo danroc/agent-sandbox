@@ -30,7 +30,7 @@ Commands:
   help, -h, --help      Show this message
 
 Environment:
-  Project mount:  \$PWD            -> /workspace
+  Project mount:  \$PWD -> /workspace
   Home mount:     $SANDBOX_HOME -> /home/agent
   Image:          $IMAGE
 
