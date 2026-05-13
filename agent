@@ -20,7 +20,7 @@ Usage:
   agent [command] [args...]
 
 Commands:
-  shell                 Open an interactive bash shell in the sandbox (default)
+  shell     [args...]   Open an interactive bash shell (default), forwarding args
   claude    [args...]   Run Claude Code, forwarding args
   opencode  [args...]   Run opencode, forwarding args
   pi        [args...]   Run pi, forwarding args
