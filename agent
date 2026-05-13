@@ -37,6 +37,13 @@ done
 AGENT="${1:-bash}"
 shift || true
 
+# Let `agent bash <cmd> [args...]` run <cmd> directly inside the container, instead of
+# bash treating <cmd> as a script file. `exec "$@"` preserves argv boundaries so quoting
+# survives.
+if [[ "$AGENT" == "bash" && $# -gt 0 && "$1" != "-"* ]]; then
+    set -- -c 'exec "$@"' bash "$@"
+fi
+
 PROJECT_DIR="$(pwd)"
 PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
 
@@ -105,7 +112,7 @@ versions)
         --env TERM_PROGRAM_VERSION \
         --volume "$SANDBOX_HOME:/home/agent" \
         "$IMAGE" \
-        bash -lc '
+        bash -c '
 			echo "node:     $(node --version)"
 			echo "npm:      $(npm --version)"
 			echo
