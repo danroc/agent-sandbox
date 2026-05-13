@@ -2,7 +2,39 @@
 
 set -euo pipefail
 
-AGENT="${1:-shell}"
+# Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
+# of picking a random host port. Anything with a ":" or other characters passes through
+# unchanged.
+expand_publish_spec() {
+    if [[ "$1" =~ ^[0-9]+$ ]]; then
+        printf '%s:%s' "$1" "$1"
+    else
+        printf '%s' "$1"
+    fi
+}
+
+PUBLISH_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -p | --publish)
+        if [[ -z "${2:-}" ]]; then
+            echo "agent: $1 requires an argument (e.g. -p 3000 or -p 127.0.0.1:3000:3000)" >&2
+            exit 1
+        fi
+        PUBLISH_ARGS+=(--publish "$(expand_publish_spec "$2")")
+        shift 2
+        ;;
+    -p=* | --publish=*)
+        PUBLISH_ARGS+=(--publish "$(expand_publish_spec "${1#*=}")")
+        shift
+        ;;
+    *)
+        break
+        ;;
+    esac
+done
+
+AGENT="${1:-bash}"
 shift || true
 
 PROJECT_DIR="$(pwd)"
@@ -13,14 +45,22 @@ SANDBOX_HOME="$SANDBOX_ROOT/home"
 IMAGE="local/agent-sandbox:latest"
 
 usage() {
-  cat <<EOF
+    cat <<EOF
 agent — Run AI coding agents in a sandboxed Docker container
 
 Usage:
-  agent [command] [args...]
+  agent [-p PORT]... [command] [args...]
+
+Options:
+  -p, --publish SPEC    Publish a container port (repeatable). A bare port
+                        number maps host:container 1-to-1; full docker -p
+                        syntax also works:
+                          -p 3000                     # host 3000 -> container 3000
+                          -p 8080:80                  # host 8080 -> container 80
+                          -p 127.0.0.1:3000:3000      # bind to loopback only
 
 Commands:
-  shell     [args...]   Open an interactive bash shell (default), forwarding args
+  bash      [args...]   Open an interactive bash shell (default), forwarding args
   claude    [args...]   Run Claude Code, forwarding args
   opencode  [args...]   Run opencode, forwarding args
   pi        [args...]   Run pi, forwarding args
@@ -38,6 +78,7 @@ Examples:
   agent                          # Open a shell
   agent claude                   # Start Claude Code
   agent claude -p "explain repo" # One-shot Claude prompt
+  agent -p 5173 bash             # Expose a dev server port to the host
   agent versions                 # Show tool versions
   agent update                   # Rebuild the image
 EOF
@@ -47,78 +88,62 @@ mkdir -p "$SANDBOX_HOME"
 chmod 700 "$SANDBOX_HOME"
 
 case "$AGENT" in
-shell)
-  CMD="bash $*"
-  ;;
-
-claude)
-  CMD="claude $*"
-  ;;
-
-opencode)
-  CMD="opencode $*"
-  ;;
-
-pi)
-  CMD="pi $*"
-  ;;
-
-codex)
-  CMD="codex $*"
-  ;;
+bash | claude | opencode | pi | codex)
+    ;;
 
 update)
-  docker build --pull --no-cache -t "$IMAGE" "$SANDBOX_ROOT"
-  exit 0
-  ;;
+    docker build --pull --no-cache -t "$IMAGE" "$SANDBOX_ROOT"
+    exit 0
+    ;;
 
 versions)
-  docker run --rm -it \
+    docker run --rm -it \
+        --env HOME=/home/agent \
+        --env TERM \
+        --env COLORTERM \
+        --env TERM_PROGRAM \
+        --env TERM_PROGRAM_VERSION \
+        --volume "$SANDBOX_HOME:/home/agent" \
+        "$IMAGE" \
+        bash -lc '
+			echo "node:     $(node --version)"
+			echo "npm:      $(npm --version)"
+			echo
+			echo "claude:   $(claude --version 2>/dev/null || echo unavailable)"
+			echo "opencode: $(opencode --version 2>/dev/null || echo unavailable)"
+			echo "pi:       $(pi --version 2>/dev/null || echo unavailable)"
+			echo "codex:    $(codex --version 2>/dev/null || echo unavailable)"
+		'
+    exit 0
+    ;;
+
+help | -h | --help)
+    usage
+    exit 0
+    ;;
+
+*)
+    echo "agent: unknown command '$AGENT'" >&2
+    echo >&2
+    usage >&2
+    exit 1
+    ;;
+
+esac
+
+docker run --rm -it \
+    --name "agent-${PROJECT_NAME}-$$" \
+    --workdir /workspace \
+    --user "$(id -u):$(id -g)" \
     --env HOME=/home/agent \
     --env TERM \
     --env COLORTERM \
     --env TERM_PROGRAM \
     --env TERM_PROGRAM_VERSION \
+    --cap-drop ALL \
+    --security-opt no-new-privileges \
+    --volume "$PROJECT_DIR:/workspace" \
     --volume "$SANDBOX_HOME:/home/agent" \
+    ${PUBLISH_ARGS[@]+"${PUBLISH_ARGS[@]}"} \
     "$IMAGE" \
-    bash -lc '
-      echo "node:     $(node --version)"
-      echo "npm:      $(npm --version)"
-      echo
-      echo "claude:   $(claude --version 2>/dev/null || echo unavailable)"
-      echo "opencode: $(opencode --version 2>/dev/null || echo unavailable)"
-      echo "pi:       $(pi --version 2>/dev/null || echo unavailable)"
-      echo "codex:    $(codex --version 2>/dev/null || echo unavailable)"
-    '
-  exit 0
-  ;;
-
-help | -h | --help)
-  usage
-  exit 0
-  ;;
-
-*)
-  echo "agent: unknown command '$AGENT'" >&2
-  echo >&2
-  usage >&2
-  exit 1
-  ;;
-
-esac
-
-docker run --rm -it \
-  --name "agent-${PROJECT_NAME}-$$" \
-  --workdir /workspace \
-  --user "$(id -u):$(id -g)" \
-  --env HOME=/home/agent \
-  --env TERM \
-  --env COLORTERM \
-  --env TERM_PROGRAM \
-  --env TERM_PROGRAM_VERSION \
-  --cap-drop ALL \
-  --security-opt no-new-privileges \
-  --volume "$PROJECT_DIR:/workspace" \
-  --volume "$SANDBOX_HOME:/home/agent" \
-  "$IMAGE" \
-  bash -lc "$CMD"
+    "$AGENT" "$@"

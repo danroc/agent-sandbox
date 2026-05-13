@@ -17,8 +17,8 @@ ln -s ~/.agent-sandbox/agent ~/.local/bin/agent
 agent update
 
 # 4. Set git identity inside the sandbox home (persists across runs).
-agent shell git config --global user.name  "Your Name"
-agent shell git config --global user.email "you@example.com"
+agent bash -c 'git config --global user.name  "Your Name"'
+agent bash -c 'git config --global user.email "you@example.com"'
 ```
 
 ## Usage
