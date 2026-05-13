@@ -34,3 +34,9 @@ agent update           # Rebuild the image
 ```
 
 Arguments after the command are forwarded, e.g. `agent claude -p "explain repo"`.
+
+## Reaching host services
+
+From inside the sandbox, `localhost` is the container itself. To reach a server running
+on the host, use `host.docker.internal`. The host service must also be bound to a
+non-loopback address (e.g. `0.0.0.0`) for the container to connect.
