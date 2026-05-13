@@ -108,7 +108,7 @@ help | -h | --help)
 esac
 
 docker run --rm -it \
-  --name "agent-${PROJECT_NAME}" \
+  --name "agent-${PROJECT_NAME}-$$" \
   --workdir /workspace \
   --user "$(id -u):$(id -g)" \
   --env HOME=/home/agent \
