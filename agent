@@ -21,6 +21,7 @@ expand_publish_spec() {
 }
 
 PUBLISH_ARGS=()
+ENV_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -p | --publish)
@@ -31,10 +32,26 @@ while [[ $# -gt 0 ]]; do
         PUBLISH_ARGS+=(--publish "$(expand_publish_spec "$2")")
         shift 2
         ;;
+
     -p=* | --publish=*)
         PUBLISH_ARGS+=(--publish "$(expand_publish_spec "${1#*=}")")
         shift
         ;;
+
+    -e | --env)
+        if [[ -z "${2:-}" ]]; then
+            echo "agent: $1 requires an argument (e.g. -e DEBUG or -e NODE_ENV=development)" >&2
+            exit 1
+        fi
+        ENV_ARGS+=(--env "$2")
+        shift 2
+        ;;
+
+    -e=* | --env=*)
+        ENV_ARGS+=(--env "${1#*=}")
+        shift
+        ;;
+
     *)
         break
         ;;
@@ -56,7 +73,7 @@ usage() {
 agent — Run AI coding agents in a sandboxed Docker container
 
 Usage:
-  agent [-p PORT]... [command] [args...]
+  agent [-p PORT]... [-e ENV]... [command] [args...]
 
 Options:
   -p, --publish SPEC    Publish a container port (repeatable). A bare port
@@ -65,6 +82,10 @@ Options:
                           -p 3000                  # host 3000 -> container 3000
                           -p 8080:80               # host 8080 -> container 80
                           -p 127.0.0.1:3000:3000   # bind to loopback only
+  -e, --env SPEC        Set an environment variable (repeatable). Supports
+                        Docker env syntax:
+                          -e DEBUG                 # pass host value through
+                          -e NODE_ENV=development  # set explicit value
 
 Commands:
   bash      [args...]   Open an interactive bash shell (default), forwarding args
@@ -86,6 +107,7 @@ Examples:
   agent claude                     # Start Claude Code
   agent claude -p "explain repo"   # One-shot Claude prompt
   agent -p 5173 bash               # Expose a dev server port to the host
+  agent -e NODE_ENV=development    # Open a shell with NODE_ENV set
   agent versions                   # Show tool versions
   agent update                     # Rebuild the image
 EOF
@@ -111,6 +133,7 @@ versions)
         --env COLORTERM \
         --env TERM_PROGRAM \
         --env TERM_PROGRAM_VERSION \
+        ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} \
         --volume "$SANDBOX_HOME:/home/agent" \
         "$IMAGE" \
         bash -c '
@@ -148,6 +171,7 @@ docker run --rm -it \
     --env COLORTERM \
     --env TERM_PROGRAM \
     --env TERM_PROGRAM_VERSION \
+    ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} \
     --cap-drop ALL \
     --security-opt no-new-privileges \
     --volume "$PROJECT_DIR:/workspace" \

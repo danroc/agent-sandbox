@@ -35,6 +35,14 @@ agent update           # Rebuild the image
 
 Arguments after the command are forwarded, e.g. `agent claude -p "explain repo"`.
 
+Launcher options before the command are passed to Docker:
+
+```sh
+agent -p 5173 bash                 # Publish host port 5173 to container port 5173
+agent -e NODE_ENV=development bash # Set an environment variable
+agent -e DEBUG codex               # Pass a host environment variable through
+```
+
 ## Reaching host services
 
 From inside the sandbox, `localhost` is the container itself. To reach a server running
