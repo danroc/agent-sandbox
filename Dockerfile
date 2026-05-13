@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm install -g \
     @anthropic-ai/claude-code@latest \
     opencode-ai@latest \
-    @earendil/pi@latest \
+    @earendil-works/pi-coding-agent@latest \
     @openai/codex@latest
 
 WORKDIR /workspace
