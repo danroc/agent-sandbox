@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     jq \
+    ncurses-term \
     ripgrep \
     fd-find \
     unzip \

@@ -75,6 +75,8 @@ update)
 versions)
   docker run --rm -it \
     --env HOME=/home/agent \
+    --env TERM \
+    --env COLORTERM \
     --volume "$SANDBOX_HOME:/home/agent" \
     "$IMAGE" \
     bash -lc '
@@ -108,6 +110,8 @@ docker run --rm -it \
   --workdir /workspace \
   --user "$(id -u):$(id -g)" \
   --env HOME=/home/agent \
+  --env TERM \
+  --env COLORTERM \
   --cap-drop ALL \
   --security-opt no-new-privileges \
   --volume "$PROJECT_DIR:/workspace" \
