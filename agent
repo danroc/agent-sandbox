@@ -77,6 +77,8 @@ versions)
     --env HOME=/home/agent \
     --env TERM \
     --env COLORTERM \
+    --env TERM_PROGRAM \
+    --env TERM_PROGRAM_VERSION \
     --volume "$SANDBOX_HOME:/home/agent" \
     "$IMAGE" \
     bash -lc '
@@ -112,6 +114,8 @@ docker run --rm -it \
   --env HOME=/home/agent \
   --env TERM \
   --env COLORTERM \
+  --env TERM_PROGRAM \
+  --env TERM_PROGRAM_VERSION \
   --cap-drop ALL \
   --security-opt no-new-privileges \
   --volume "$PROJECT_DIR:/workspace" \
