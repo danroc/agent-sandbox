@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+AGENT="${1:-shell}"
+shift || true
+
+PROJECT_DIR="$(pwd)"
+PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
+
+SANDBOX_ROOT="$HOME/.agent-sandbox"
+SANDBOX_HOME="$SANDBOX_ROOT/home"
+IMAGE="local/agent-sandbox:latest"
+
+mkdir -p "$SANDBOX_HOME"
+chmod 700 "$SANDBOX_HOME"
+
+case "$AGENT" in
+shell)
+  CMD="bash"
+  ;;
+
+claude)
+  CMD="claude $*"
+  ;;
+
+opencode)
+  CMD="opencode $*"
+  ;;
+
+pi)
+  CMD="pi $*"
+  ;;
+
+codex)
+  CMD="codex $*"
+  ;;
+
+update)
+  docker build --pull --no-cache -t "$IMAGE" "$SANDBOX_ROOT"
+  exit 0
+  ;;
+
+rebuild)
+  docker build -t "$IMAGE" "$SANDBOX_ROOT"
+  exit 0
+  ;;
+
+versions)
+  docker run --rm -it \
+    --env HOME=/home/agent \
+    --volume "$SANDBOX_HOME:/home/agent" \
+    "$IMAGE" \
+    bash -lc '
+      echo "node:     $(node --version)"
+      echo "npm:      $(npm --version)"
+      echo
+      echo "claude:   $(claude --version 2>/dev/null || echo unavailable)"
+      echo "opencode: $(opencode --version 2>/dev/null || echo unavailable)"
+      echo "pi:       $(pi --version 2>/dev/null || echo unavailable)"
+      echo "codex:    $(codex --version 2>/dev/null || echo unavailable)"
+    '
+  exit 0
+  ;;
+
+*)
+  echo "Usage: agent {shell|claude|opencode|pi|codex|update|rebuild|versions} [args...]"
+  exit 1
+  ;;
+
+esac
+
+docker run --rm -it \
+  --name "agent-${PROJECT_NAME}" \
+  --workdir /workspace \
+  --user "$(id -u):$(id -g)" \
+  --env HOME=/home/agent \
+  --cap-drop ALL \
+  --security-opt no-new-privileges \
+  --volume "$PROJECT_DIR:/workspace" \
+  --volume "$SANDBOX_HOME:/home/agent" \
+  "$IMAGE" \
+  bash -lc "$CMD"
