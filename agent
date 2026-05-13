@@ -48,7 +48,7 @@ chmod 700 "$SANDBOX_HOME"
 
 case "$AGENT" in
 shell)
-  CMD="bash"
+  CMD="bash $*"
   ;;
 
 claude)
