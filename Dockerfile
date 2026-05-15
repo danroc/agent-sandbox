@@ -3,21 +3,17 @@ FROM node:24-bookworm
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash \
-    ca-certificates \
     curl \
     git \
     jq \
     ncurses-term \
     ripgrep \
     fd-find \
-    unzip \
     zip \
-    build-essential \
+    unzip \
     python3 \
     python3-pip \
     python3-venv \
-    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g \
