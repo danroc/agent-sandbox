@@ -3,14 +3,20 @@ FROM node:24-bookworm
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Sandboxing
+    bubblewrap \
+    socat \
+    # Terminal support
+    ncurses-term \
+    # Common utilities
     curl \
+    fd-find \
     git \
     jq \
-    ncurses-term \
     ripgrep \
-    fd-find \
-    zip \
     unzip \
+    zip \
+    # Python and related tools
     python3 \
     python3-pip \
     python3-venv \
