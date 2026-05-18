@@ -1,5 +1,6 @@
+# Dev environments
+/.worktrees/
+
+# User-specific configuration
 /home/
-
-.worktrees/
-
 config.sh
