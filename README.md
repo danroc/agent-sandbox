@@ -48,3 +48,28 @@ agent -e DEBUG codex               # Pass a host environment variable through
 From inside the sandbox, `localhost` is the container itself. To reach a server running
 on the host, use `host.docker.internal`. The host service must also be bound to a
 non-loopback address (e.g. `0.0.0.0`) for the container to connect.
+
+## Customizing the sandbox
+
+`agent` reads an optional bash config file at `~/.agent-sandbox/config.sh`. Copy
+the included `config.sh.example` to get started:
+
+```sh
+cp ~/.agent-sandbox/config.sh.example ~/.agent-sandbox/config.sh
+```
+
+The config exposes three arrays:
+
+- `APT_PACKAGES` — extra Debian packages baked into the image.
+- `NPM_PACKAGES` — extra global npm packages baked into the image.
+- `MOUNTS` — extra volume mounts applied to every container run, in docker
+  `-v` syntax (`SOURCE:TARGET[:ro]`). `$HOME` and other shell expansions work.
+
+Run `agent update` after changing `APT_PACKAGES` or `NPM_PACKAGES` to rebuild
+the image. `MOUNTS` changes apply on the next `agent` run with no rebuild.
+
+The `-v/--volume` launcher flag adds one-shot mounts on top of the config:
+
+```sh
+agent -v "$PWD/scratch:/scratch" bash
+```

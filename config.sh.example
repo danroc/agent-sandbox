@@ -1,0 +1,23 @@
+# agent-sandbox config — copy to ~/.agent-sandbox/config.sh and edit.
+#
+# This file is sourced by the `agent` launcher, so anything bash supports
+# (comments, $HOME expansion, $(command substitution), conditionals) works.
+
+# Extra Debian packages baked into the image. Applied on `agent update`.
+APT_PACKAGES=(
+    # tmux
+    # htop
+)
+
+# Extra npm packages installed globally. Applied on `agent update`.
+NPM_PACKAGES=(
+    # yarn
+    # pnpm
+)
+
+# Extra mounts applied to every `agent` run. Docker -v syntax:
+#   SOURCE:TARGET[:ro]
+MOUNTS=(
+    # "$HOME/Documents/notes:/home/agent/notes:ro"
+    # "$HOME/.aws:/home/agent/.aws:ro"
+)

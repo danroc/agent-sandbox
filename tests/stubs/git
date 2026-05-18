@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Test stub for git. No-ops `pull` (in any position), defers everything
+# else to the real git so commands like `git config` still work if needed.
+
+set -euo pipefail
+
+for arg in "$@"; do
+    if [[ "$arg" == "pull" ]]; then
+        exit 0
+    fi
+done
+
+exec /usr/bin/git "$@"

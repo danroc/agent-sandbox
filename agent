@@ -9,6 +9,23 @@ SANDBOX_ROOT="$HOME/.agent-sandbox"
 SANDBOX_HOME="$SANDBOX_ROOT/home"
 IMAGE="local/agent-sandbox:latest"
 
+CONFIG_FILE="$SANDBOX_ROOT/config.sh"
+
+# Arrays the user can set in config.sh; default to empty so `set -u` is happy.
+APT_PACKAGES=()
+NPM_PACKAGES=()
+MOUNTS=()
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$CONFIG_FILE"
+fi
+
+CONFIG_MOUNT_ARGS=()
+for mount in "${MOUNTS[@]+"${MOUNTS[@]}"}"; do
+    CONFIG_MOUNT_ARGS+=(--volume "$mount")
+done
+
 # Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
 # of picking a random host port. Anything with a ":" or other characters passes through
 # unchanged.
@@ -22,6 +39,7 @@ expand_publish_spec() {
 
 PUBLISH_ARGS=()
 ENV_ARGS=()
+VOLUME_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -p | --publish)
@@ -49,6 +67,20 @@ while [[ $# -gt 0 ]]; do
 
     -e=* | --env=*)
         ENV_ARGS+=(--env "${1#*=}")
+        shift
+        ;;
+
+    -v | --volume)
+        if [[ -z "${2:-}" ]]; then
+            echo "agent: $1 requires an argument (e.g. -v /host:/container)" >&2
+            exit 1
+        fi
+        VOLUME_ARGS+=(--volume "$2")
+        shift 2
+        ;;
+
+    -v=* | --volume=*)
+        VOLUME_ARGS+=(--volume "${1#*=}")
         shift
         ;;
 
@@ -86,6 +118,10 @@ Options:
                         Docker env syntax:
                           -e DEBUG                 # pass host value through
                           -e NODE_ENV=development  # set explicit value
+  -v, --volume SPEC     Mount a host path into the container (repeatable).
+                        Uses docker -v syntax:
+                          -v /host/path:/container/path
+                          -v /host/path:/container/path:ro
 
 Commands:
   bash      [args...]   Open an interactive bash shell (default), forwarding args
@@ -100,6 +136,7 @@ Commands:
 Environment:
   Project mount:  \$PWD -> /workspace
   Home mount:     $SANDBOX_HOME -> /home/agent
+  Config file:    $CONFIG_FILE (optional; see config.sh.example)
   Image:          $IMAGE
 
 Examples:
@@ -121,8 +158,32 @@ bash | claude | opencode | pi | codex)
     ;;
 
 update)
+    BASE_IMAGE="local/agent-sandbox:base"
     git -C "$SANDBOX_ROOT" pull --ff-only
-    docker build --pull --no-cache -t "$IMAGE" "$SANDBOX_ROOT"
+    docker build --pull --no-cache -t "$BASE_IMAGE" "$SANDBOX_ROOT"
+    if [[ ${#APT_PACKAGES[@]} -eq 0 && ${#NPM_PACKAGES[@]} -eq 0 ]]; then
+        docker tag "$BASE_IMAGE" "$IMAGE"
+        exit 0
+    fi
+    OVERLAY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-sandbox.XXXXXXXX")"
+    trap 'rm -rf "$OVERLAY_DIR"' EXIT
+    OVERLAY_DOCKERFILE="$OVERLAY_DIR/Dockerfile"
+    {
+        echo "FROM $BASE_IMAGE"
+        echo
+        echo "USER root"
+        if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
+            echo
+            echo "RUN apt-get update && apt-get install -y --no-install-recommends \\"
+            echo "        ${APT_PACKAGES[*]} \\"
+            echo "    && rm -rf /var/lib/apt/lists/*"
+        fi
+        if [[ ${#NPM_PACKAGES[@]} -gt 0 ]]; then
+            echo
+            echo "RUN npm install -g ${NPM_PACKAGES[*]}"
+        fi
+    } > "$OVERLAY_DOCKERFILE"
+    docker build --no-cache -t "$IMAGE" -f "$OVERLAY_DOCKERFILE" "$OVERLAY_DIR"
     exit 0
     ;;
 
@@ -168,6 +229,8 @@ docker run --rm -it \
     --security-opt no-new-privileges \
     --volume "$PROJECT_DIR:/workspace" \
     --volume "$SANDBOX_HOME:/home/agent" \
+    ${CONFIG_MOUNT_ARGS[@]+"${CONFIG_MOUNT_ARGS[@]}"} \
+    ${VOLUME_ARGS[@]+"${VOLUME_ARGS[@]}"} \
     ${PUBLISH_ARGS[@]+"${PUBLISH_ARGS[@]}"} \
     "$IMAGE" \
     "$AGENT" "$@"

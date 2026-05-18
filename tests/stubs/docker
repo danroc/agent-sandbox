@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Test stub for docker. Records argv to $AGENT_TEST_DOCKER_LOG.
+# For `build`, also copies the build context's Dockerfile to
+# $AGENT_TEST_DOCKERFILE_LOG so tests can assert on overlay contents.
+
+set -euo pipefail
+
+printf '%s\n' "$*" >> "$AGENT_TEST_DOCKER_LOG"
+
+if [[ "${1:-}" == "build" ]]; then
+    dockerfile_path=""
+    context=""
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -f|--file)
+                dockerfile_path="$2"
+                shift 2
+                ;;
+            -t|--tag|--build-arg|--platform)
+                shift 2
+                ;;
+            --pull|--no-cache|--quiet|-q)
+                shift
+                ;;
+            -*)
+                shift
+                ;;
+            *)
+                context="$1"
+                shift
+                ;;
+        esac
+    done
+    if [[ -z "$dockerfile_path" && -n "$context" ]]; then
+        dockerfile_path="$context/Dockerfile"
+    fi
+    if [[ -n "$dockerfile_path" && -f "$dockerfile_path" ]]; then
+        cat "$dockerfile_path" >> "$AGENT_TEST_DOCKERFILE_LOG"
+        printf -- '---\n' >> "$AGENT_TEST_DOCKERFILE_LOG"
+    fi
+fi
+
+exit 0
