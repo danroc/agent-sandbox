@@ -9,7 +9,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-AGENT="$REPO_ROOT/agent"
+COMMAND="$REPO_ROOT/agent"
 
 PASS=0
 FAIL=0
@@ -89,23 +89,23 @@ assert_dockerfile_contains() {
 # --- Tests are appended here by later tasks ---
 
 test_volume_flag_appends_to_docker_run() {
-    "$AGENT" -v /host/path:/container/path bash -c 'true' || return 1
+    "$COMMAND" -v /host/path:/container/path bash -c 'true' || return 1
     assert_log_contains "--volume /host/path:/container/path"
 }
 
 test_volume_flag_repeatable() {
-    "$AGENT" -v /a:/b -v /c:/d bash -c 'true' || return 1
+    "$COMMAND" -v /a:/b -v /c:/d bash -c 'true' || return 1
     assert_log_contains "--volume /a:/b"
     assert_log_contains "--volume /c:/d"
 }
 
 test_volume_flag_equals_syntax() {
-    "$AGENT" --volume=/a:/b bash -c 'true' || return 1
+    "$COMMAND" --volume=/a:/b bash -c 'true' || return 1
     assert_log_contains "--volume /a:/b"
 }
 
 test_volume_flag_requires_argument() {
-    if "$AGENT" -v 2>/dev/null; then
+    if "$COMMAND" -v 2>/dev/null; then
         echo "  expected non-zero exit when -v has no argument" >&2
         return 1
     fi
@@ -117,7 +117,7 @@ run_test "volume flag supports = syntax"       test_volume_flag_equals_syntax
 run_test "volume flag requires an argument"    test_volume_flag_requires_argument
 
 test_no_config_means_no_extra_mounts() {
-    "$AGENT" bash -c 'true' || return 1
+    "$COMMAND" bash -c 'true' || return 1
     # The two baseline mounts must still appear...
     assert_log_contains "--volume $PWD:/workspace"
     assert_log_contains "--volume $SANDBOX_HOME:/home/agent"
@@ -137,7 +137,7 @@ MOUNTS=(
     "/host/aws:/home/agent/.aws"
 )
 EOF
-    "$AGENT" bash -c 'true' || return 1
+    "$COMMAND" bash -c 'true' || return 1
     assert_log_contains "--volume /host/notes:/home/agent/notes:ro"
     assert_log_contains "--volume /host/aws:/home/agent/.aws"
 }
@@ -146,7 +146,7 @@ test_config_home_expansion() {
     cat >"$SANDBOX_ROOT/config.sh" <<'EOF'
 MOUNTS=("$HOME/notes:/home/agent/notes")
 EOF
-    "$AGENT" bash -c 'true' || return 1
+    "$COMMAND" bash -c 'true' || return 1
     assert_log_contains "--volume $HOME/notes:/home/agent/notes"
 }
 
@@ -154,7 +154,7 @@ test_cli_volume_comes_after_config_volume() {
     cat >"$SANDBOX_ROOT/config.sh" <<EOF
 MOUNTS=("/host/cfg:/cfg")
 EOF
-    "$AGENT" -v /host/cli:/cli bash -c 'true' || return 1
+    "$COMMAND" -v /host/cli:/cli bash -c 'true' || return 1
     # Read the recorded docker run line and check ordering.
     line="$(cat "$AGENT_TEST_DOCKER_LOG")"
     cfg_pos="${line%%--volume /host/cfg:/cfg*}"
@@ -172,7 +172,7 @@ run_test "config mounts expand \$HOME"                   test_config_home_expans
 run_test "CLI -v appears after config mounts"            test_cli_volume_comes_after_config_volume
 
 test_update_with_no_packages_tags_base_as_latest() {
-    "$AGENT" update || return 1
+    "$COMMAND" update || return 1
     assert_log_contains "build --pull --no-cache -t local/agent-sandbox:base" || return 1
     assert_log_contains "tag local/agent-sandbox:base local/agent-sandbox:latest" || return 1
     # No overlay Dockerfile should have been built.
@@ -188,7 +188,7 @@ test_update_with_apt_packages_writes_overlay() {
     cat >"$SANDBOX_ROOT/config.sh" <<'EOF'
 APT_PACKAGES=(tmux htop)
 EOF
-    "$AGENT" update || return 1
+    "$COMMAND" update || return 1
     assert_log_contains "build --pull --no-cache -t local/agent-sandbox:base"
     assert_dockerfile_contains "FROM local/agent-sandbox:base"
     assert_dockerfile_contains "apt-get install -y --no-install-recommends"
@@ -206,7 +206,7 @@ test_update_with_npm_packages_writes_overlay() {
     cat >"$SANDBOX_ROOT/config.sh" <<'EOF'
 NPM_PACKAGES=(yarn pnpm)
 EOF
-    "$AGENT" update || return 1
+    "$COMMAND" update || return 1
     assert_dockerfile_contains "FROM local/agent-sandbox:base"
     assert_dockerfile_contains "npm install -g yarn pnpm"
 }
@@ -216,7 +216,7 @@ test_update_with_both_apt_and_npm_writes_both() {
 APT_PACKAGES=(tmux)
 NPM_PACKAGES=(yarn)
 EOF
-    "$AGENT" update || return 1
+    "$COMMAND" update || return 1
     assert_dockerfile_contains "apt-get install -y --no-install-recommends"
     assert_dockerfile_contains "tmux"
     assert_dockerfile_contains "npm install -g yarn"

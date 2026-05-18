@@ -90,13 +90,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-AGENT="${1:-bash}"
+COMMAND="${1:-bash}"
 shift || true
 
 # Let `agent bash <cmd> [args...]` run <cmd> directly inside the container, instead of
 # bash treating <cmd> as a script file. `exec "$@"` preserves argv boundaries so quoting
 # survives.
-if [[ "$AGENT" == "bash" && $# -gt 0 && "$1" != "-"* ]]; then
+if [[ "$COMMAND" == "bash" && $# -gt 0 && "$1" != "-"* ]]; then
     set -- -c 'exec "$@"' bash "$@"
 fi
 
@@ -153,7 +153,7 @@ EOF
 mkdir -p "$SANDBOX_HOME"
 chmod 700 "$SANDBOX_HOME"
 
-case "$AGENT" in
+case "$COMMAND" in
 bash | claude | opencode | pi | codex)
     ;;
 
@@ -192,7 +192,7 @@ update)
     ;;
 
 versions)
-    AGENT=bash
+    COMMAND=bash
     # shellcheck disable=SC2016
     set -- -c '
 		echo "node:     $(node --version)"
@@ -211,7 +211,7 @@ help | -h | --help)
     ;;
 
 *)
-    echo "agent: unknown command '$AGENT'" >&2
+    echo "agent: unknown command '$COMMAND'" >&2
     echo >&2
     usage >&2
     exit 1
@@ -237,4 +237,4 @@ docker run --rm -it \
     ${VOLUME_ARGS[@]+"${VOLUME_ARGS[@]}"} \
     ${PUBLISH_ARGS[@]+"${PUBLISH_ARGS[@]}"} \
     "$IMAGE" \
-    "$AGENT" "$@"
+    "$COMMAND" "$@"
