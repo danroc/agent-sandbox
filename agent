@@ -224,6 +224,7 @@ docker run --rm -it \
     --workdir /workspace \
     --user "$(id -u):$(id -g)" \
     --env HOME=/home/agent \
+    --env AGENT_PROJECT_NAME="$PROJECT_NAME" \
     --env TERM \
     --env COLORTERM \
     --env TERM_PROGRAM \

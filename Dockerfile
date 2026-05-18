@@ -28,6 +28,9 @@ RUN npm install -g \
     @openai/codex@latest \
     opencode-ai@latest
 
+# Show the project name and working directory in the shell prompt.
+RUN printf '\nPS1='\''(${AGENT_PROJECT_NAME:-sandbox}) \w\$ '\''\n' >> /etc/bash.bashrc
+
 WORKDIR /workspace
 
 CMD ["bash"]
