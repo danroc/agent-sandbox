@@ -2,14 +2,14 @@
 
 set -euo pipefail
 
-PROJECT_DIR="$(pwd)"
-PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
-
 SANDBOX_ROOT="$HOME/.agent-sandbox"
 SANDBOX_HOME="$SANDBOX_ROOT/home"
 IMAGE="local/agent-sandbox:latest"
 
 CONFIG_FILE="$SANDBOX_ROOT/config.sh"
+
+PROJECT_DIR="$(pwd)"
+PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
 
 # Arrays the user can set in config.sh; default to empty so `set -u` is happy.
 APT_PACKAGES=()
