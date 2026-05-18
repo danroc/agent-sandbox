@@ -161,12 +161,15 @@ update)
     BASE_IMAGE="local/agent-sandbox:base"
     git -C "$SANDBOX_ROOT" pull --ff-only
     docker build --pull --no-cache -t "$BASE_IMAGE" "$SANDBOX_ROOT"
+
     if [[ ${#APT_PACKAGES[@]} -eq 0 && ${#NPM_PACKAGES[@]} -eq 0 ]]; then
         docker tag "$BASE_IMAGE" "$IMAGE"
         exit 0
     fi
+
     OVERLAY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-sandbox.XXXXXXXX")"
     trap 'rm -rf "$OVERLAY_DIR"' EXIT
+
     OVERLAY_DOCKERFILE="$OVERLAY_DIR/Dockerfile"
     {
         echo "FROM $BASE_IMAGE"
@@ -183,6 +186,7 @@ update)
             echo "RUN npm install -g ${NPM_PACKAGES[*]}"
         fi
     } > "$OVERLAY_DOCKERFILE"
+
     docker build --no-cache -t "$IMAGE" -f "$OVERLAY_DOCKERFILE" "$OVERLAY_DIR"
     exit 0
     ;;
