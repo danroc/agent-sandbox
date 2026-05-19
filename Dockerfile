@@ -1,18 +1,6 @@
 FROM node:26-bookworm
 
 # --------------------------------------------------------------------------------------
-# GitHub CLI repository
-# --------------------------------------------------------------------------------------
-
-RUN curl -fsSL \
-    https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    -o /etc/apt/keyrings/githubcli-archive-keyring.gpg
-
-RUN echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-    > /etc/apt/sources.list.d/github-cli.list
-
-# --------------------------------------------------------------------------------------
 # System packages
 # --------------------------------------------------------------------------------------
 
@@ -28,7 +16,6 @@ RUN apt-get update \
         # Common utilities
         curl         \
         fd-find      \
-        gh           \
         git          \
         jq           \
         ripgrep      \
