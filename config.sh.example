@@ -24,3 +24,10 @@ MOUNTS=(
     # "$HOME/Documents/notes:/home/agent/notes:ro"
     # "$HOME/.aws:/home/agent/.aws:ro"
 )
+
+# Extra raw arguments passed to docker run on every `agent` run.
+DOCKER_ARGS=(
+    # --memory=4g
+    # --network=host
+    # --device=/dev/ttyUSB0
+)

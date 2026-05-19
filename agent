@@ -16,6 +16,7 @@ PROJECT_NAME="$(basename "$PROJECT_DIR" | tr -cd '[:alnum:]_.-')"
 APT_PACKAGES=()
 NPM_PACKAGES=()
 MOUNTS=()
+DOCKER_ARGS=()
 
 if [[ -f "$CONFIG_FILE" ]]; then
     # shellcheck source=/dev/null
@@ -43,6 +44,20 @@ ENV_ARGS=()
 VOLUME_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
+    -D | --docker-arg)
+        if [[ -z "${2:-}" ]]; then
+            echo "agent: $1 requires an argument (e.g. -D --memory=4g)" >&2
+            exit 1
+        fi
+        DOCKER_ARGS+=("$2")
+        shift 2
+        ;;
+
+    -D=* | --docker-arg=*)
+        DOCKER_ARGS+=("${1#*=}")
+        shift
+        ;;
+
     -p | --publish)
         if [[ -z "${2:-}" ]]; then
             echo "agent: $1 requires an argument (e.g. -p 3000 or -p 127.0.0.1:3000:3000)" >&2
@@ -106,7 +121,7 @@ usage() {
 agent — Run AI coding agents in a sandboxed Docker container
 
 Usage:
-  agent [-p PORT]... [-e ENV]... [command] [args...]
+  agent [-p PORT]... [-e ENV]... [-D ARG]... [command] [args...]
 
 Options:
   -p, --publish SPEC    Publish a container port (repeatable). A bare port
@@ -123,6 +138,11 @@ Options:
                         Uses docker -v syntax:
                           -v /host/path:/container/path
                           -v /host/path:/container/path:ro
+  -D, --docker-arg ARG  Pass a raw argument to docker run (repeatable).
+                        Use for flags not covered above:
+                          -D --memory=4g
+                          -D --network=host
+                          -D --device=/dev/ttyUSB0
 
 Commands:
   bash      [args...]   Open an interactive bash shell (default), forwarding args
@@ -237,5 +257,6 @@ docker run --rm -it \
     ${CONFIG_MOUNT_ARGS[@]+"${CONFIG_MOUNT_ARGS[@]}"} \
     ${VOLUME_ARGS[@]+"${VOLUME_ARGS[@]}"} \
     ${PUBLISH_ARGS[@]+"${PUBLISH_ARGS[@]}"} \
+    ${DOCKER_ARGS[@]+"${DOCKER_ARGS[@]}"} \
     "$AGENT_IMAGE" \
     "$COMMAND" "$@"
