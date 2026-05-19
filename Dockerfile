@@ -1,25 +1,23 @@
 FROM node:26-bookworm
 
-USER root
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Sandboxing
-    bubblewrap \
-    socat \
-    # Terminal support
-    ncurses-term \
-    # Common utilities
-    curl \
-    fd-find \
-    git \
-    jq \
-    ripgrep \
-    unzip \
-    zip \
-    # Python and related tools
-    python3 \
-    python3-pip \
-    python3-venv \
+        # Used by Claude Code for sandboxing
+        bubblewrap \
+        socat \
+        # Improved terminal support inside the sandbox
+        ncurses-term \
+        # Common utilities
+        curl \
+        fd-find \
+        git \
+        jq \
+        ripgrep \
+        unzip \
+        zip \
+        # Python and related tools
+        python3 \
+        python3-pip \
+        python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g \
