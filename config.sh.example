@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034
 
 # agent-sandbox config — copy to ~/.agent-sandbox/config.sh and edit.
 #
-# This file is sourced by the `agent` launcher, so anything bash supports
-# (comments, $HOME expansion, $(command substitution), conditionals) works.
+# This file is sourced by the `agent` launcher, so anything bash supports (comments,
+# $HOME expansion, $(command substitution), conditionals) works.
 
 # Extra Debian packages baked into the image. Applied on `agent update`.
-# shellcheck disable=SC2034
 APT_PACKAGES=(
     # tmux
     # htop
 )
 
 # Extra npm packages installed globally. Applied on `agent update`.
-# shellcheck disable=SC2034
 NPM_PACKAGES=(
     # yarn
     # pnpm
@@ -21,7 +20,6 @@ NPM_PACKAGES=(
 
 # Extra mounts applied to every `agent` run. Docker -v syntax:
 #   SOURCE:TARGET[:ro]
-# shellcheck disable=SC2034
 MOUNTS=(
     # "$HOME/Documents/notes:/home/agent/notes:ro"
     # "$HOME/.aws:/home/agent/.aws:ro"

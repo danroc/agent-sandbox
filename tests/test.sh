@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Test driver for the `agent` launcher.
 #
-# Each test runs in an isolated temp HOME with PATH-shimmed docker + git
-# stubs. The stubs record what the launcher would have run; tests assert
-# on the recorded log instead of actually invoking docker.
+# Each test runs in an isolated temp HOME with PATH-shimmed docker + git stubs. The
+# stubs record what the launcher would have run; tests assert on the recorded log
+# instead of actually invoking docker.
 
 set -euo pipefail
 
