@@ -23,9 +23,8 @@ if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
 fi
 
-CONFIG_MOUNT_ARGS=()
 for mount in "${MOUNTS[@]+"${MOUNTS[@]}"}"; do
-    CONFIG_MOUNT_ARGS+=(--volume "$mount")
+    DOCKER_ARGS+=(--volume "$mount")
 done
 
 # Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
@@ -39,9 +38,6 @@ expand_publish_spec() {
     fi
 }
 
-PUBLISH_ARGS=()
-ENV_ARGS=()
-VOLUME_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -D | --docker-arg)
@@ -63,12 +59,12 @@ while [[ $# -gt 0 ]]; do
             echo "agent: $1 requires an argument (e.g. -p 3000 or -p 127.0.0.1:3000:3000)" >&2
             exit 1
         fi
-        PUBLISH_ARGS+=(--publish "$(expand_publish_spec "$2")")
+        DOCKER_ARGS+=(--publish "$(expand_publish_spec "$2")")
         shift 2
         ;;
 
     -p=* | --publish=*)
-        PUBLISH_ARGS+=(--publish "$(expand_publish_spec "${1#*=}")")
+        DOCKER_ARGS+=(--publish "$(expand_publish_spec "${1#*=}")")
         shift
         ;;
 
@@ -77,12 +73,12 @@ while [[ $# -gt 0 ]]; do
             echo "agent: $1 requires an argument (e.g. -e DEBUG or -e NODE_ENV=development)" >&2
             exit 1
         fi
-        ENV_ARGS+=(--env "$2")
+        DOCKER_ARGS+=(--env "$2")
         shift 2
         ;;
 
     -e=* | --env=*)
-        ENV_ARGS+=(--env "${1#*=}")
+        DOCKER_ARGS+=(--env "${1#*=}")
         shift
         ;;
 
@@ -91,12 +87,12 @@ while [[ $# -gt 0 ]]; do
             echo "agent: $1 requires an argument (e.g. -v /host:/container)" >&2
             exit 1
         fi
-        VOLUME_ARGS+=(--volume "$2")
+        DOCKER_ARGS+=(--volume "$2")
         shift 2
         ;;
 
     -v=* | --volume=*)
-        VOLUME_ARGS+=(--volume "${1#*=}")
+        DOCKER_ARGS+=(--volume "${1#*=}")
         shift
         ;;
 
@@ -249,14 +245,10 @@ docker run --rm -it \
     --env COLORTERM \
     --env TERM_PROGRAM \
     --env TERM_PROGRAM_VERSION \
-    ${ENV_ARGS[@]+"${ENV_ARGS[@]}"} \
     --cap-drop ALL \
     --security-opt no-new-privileges \
     --volume "$PROJECT_DIR:/workspace" \
     --volume "$SANDBOX_HOME:/home/agent" \
-    ${CONFIG_MOUNT_ARGS[@]+"${CONFIG_MOUNT_ARGS[@]}"} \
-    ${VOLUME_ARGS[@]+"${VOLUME_ARGS[@]}"} \
-    ${PUBLISH_ARGS[@]+"${PUBLISH_ARGS[@]}"} \
     ${DOCKER_ARGS[@]+"${DOCKER_ARGS[@]}"} \
     "$AGENT_IMAGE" \
     "$COMMAND" "$@"
