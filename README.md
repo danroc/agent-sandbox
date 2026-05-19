@@ -4,7 +4,7 @@ Run AI coding CLIs (Claude Code, OpenCode, Pi, Codex) inside a sandboxed Docker
 container with an isolated `$HOME`. The current directory is mounted as `/workspace`;
 the sandbox home lives at `~/.agent-sandbox/home`.
 
-## Bootstrap
+## Installation
 
 ```sh
 # 1. Clone into ~/.agent-sandbox so the home mount lives alongside the repo
@@ -35,24 +35,25 @@ agent update           # Rebuild the image
 
 Arguments after the command are forwarded, e.g. `agent claude -p "explain repo"`.
 
-Launcher options before the command are passed to Docker:
+The launcher accepts flags before the command name:
 
 ```sh
-agent -p 5173 bash                 # Publish host port 5173 to container port 5173
+agent -p 5173 bash                 # Publish port 5173 to the container
 agent -e NODE_ENV=development bash # Set an environment variable
-agent -e DEBUG codex               # Pass a host environment variable through
+agent -e DEBUG codex               # Pass a host env var through
+agent -v "$PWD/scratch:/scratch" bash  # Mount an extra directory
 ```
 
 ## Reaching host services
 
-From inside the sandbox, `localhost` is the container itself. To reach a server running
-on the host, use `host.docker.internal`. The host service must also be bound to a
-non-loopback address (e.g. `0.0.0.0`) for the container to connect.
+From inside the sandbox, `localhost` is the container itself. To reach a service
+running on the host, use `host.docker.internal`. The service must be bound to a
+non-loopback address (e.g. `0.0.0.0`) for the container to reach it.
 
 ## Customizing the sandbox
 
-`agent` reads an optional bash config file at `~/.agent-sandbox/config.sh`. Copy
-the included `config.sh.example` to get started:
+`agent` reads an optional config file at `~/.agent-sandbox/config.sh`. Copy the
+included example to get started:
 
 ```sh
 cp ~/.agent-sandbox/config.sh.example ~/.agent-sandbox/config.sh
@@ -62,14 +63,8 @@ The config exposes three arrays:
 
 - `APT_PACKAGES` — extra Debian packages baked into the image.
 - `NPM_PACKAGES` — extra global npm packages baked into the image.
-- `MOUNTS` — extra volume mounts applied to every container run, in docker
-  `-v` syntax (`SOURCE:TARGET[:ro]`). `$HOME` and other shell expansions work.
+- `MOUNTS` — extra volume mounts applied to every run, in `-v SOURCE:TARGET[:ro]`
+  syntax. Shell expansions like `$HOME` are supported.
 
 Run `agent update` after changing `APT_PACKAGES` or `NPM_PACKAGES` to rebuild
-the image. `MOUNTS` changes apply on the next `agent` run with no rebuild.
-
-The `-v/--volume` launcher flag adds one-shot mounts on top of the config:
-
-```sh
-agent -v "$PWD/scratch:/scratch" bash
-```
+the image. `MOUNTS` changes take effect on the next run with no rebuild needed.
