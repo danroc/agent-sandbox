@@ -9,18 +9,15 @@ RUN apt-get update \
         # Claude Code sandboxing
         bubblewrap   \
         socat        \
-        \
         # Terminal support
         ncurses-term \
-        \
         # Common utilities
         curl         \
         fd-find      \
         git          \
         jq           \
         ripgrep      \
-        \
-        # Python
+        # Python environment
         python3      \
         python3-pip  \
         python3-venv \
