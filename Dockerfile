@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ncurses-term \
         # Common utilities
         curl \
+        fd-find \
         git \
         jq \
         ripgrep \
