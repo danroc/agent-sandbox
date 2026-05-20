@@ -1,22 +1,26 @@
 # agent-sandbox
 
-Run AI coding CLIs (Claude Code, OpenCode, Pi, Codex) inside a sandboxed Docker
-container with an isolated `$HOME`. The current directory is mounted as `/workspace`;
-the sandbox home lives at `~/.agent-sandbox/home`.
+Run AI coding agents (Claude Code, OpenCode, Pi, Codex) in a sandboxed Docker container.
+Two directories are mounted into the container:
+
+| Host                    | Container     | Description                         |
+| ----------------------- | ------------- | ----------------------------------- |
+| `$PWD`                  | `/workspace`  | Your current project                |
+| `~/.agent-sandbox/home` | `/home/agent` | Sandbox home, persisted across runs |
 
 ## Installation
 
 ```sh
-# 1. Clone into ~/.agent-sandbox so the home mount lives alongside the repo
+# Clone into ~/.agent-sandbox
 git clone git@github.com:danroc/agent-sandbox.git ~/.agent-sandbox
 
-# 2. Symlink the launcher onto your PATH
+# Symlink the launcher onto your PATH
 ln -s ~/.agent-sandbox/agent ~/.local/bin/agent
 
-# 3. Build the image
+# Build the image
 agent update
 
-# 4. Set git identity inside the sandbox home (persists across runs)
+# Set git identity inside the sandbox (persists across runs)
 agent bash git config --global user.name  "Your Name"
 agent bash git config --global user.email "you@example.com"
 ```
@@ -25,46 +29,60 @@ agent bash git config --global user.email "you@example.com"
 
 ```sh
 agent                  # Interactive bash shell
-agent claude           # Start Claude Code
-agent opencode         # Start opencode
-agent pi               # Start pi
-agent codex            # Start codex
+agent claude           # Claude Code
+agent opencode         # opencode
+agent pi               # pi
+agent codex            # codex
 agent versions         # Print tool versions
 agent update           # Rebuild the image
 ```
 
-Arguments after the command are forwarded, e.g. `agent claude -p "explain repo"`.
+Arguments after the command are forwarded: `agent claude -p "explain repo"`.
 
-The launcher accepts flags before the command name:
+### Flags
+
+Flags go before the command name and can be repeated:
+
+| Flag                   | Description                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `-p, --publish SPEC`   | Publish a port. Bare number maps 1-to-1; full docker `-p` syntax works too.     |
+| `-e, --env SPEC`       | Set or forward an env var (`-e DEBUG` passes the host value; `-e K=V` sets it). |
+| `-v, --volume SPEC`    | Mount a host path (`-v /host:/container[:ro]`).                                 |
+| `-D, --docker-arg ARG` | Pass a raw argument to `docker run` (e.g. `-D --memory=4g`).                    |
 
 ```sh
-agent -p 5173 bash                 # Publish port 5173 to the container
-agent -e NODE_ENV=development bash # Set an environment variable
-agent -e DEBUG codex               # Pass a host env var through
-agent -v "$PWD/scratch:/scratch" bash  # Mount an extra directory
+agent -p 5173 claude               # Expose a dev server port
+agent -e NODE_ENV=development bash # Set an env var
+agent -e DEBUG codex               # Forward a host env var
+agent -v "$PWD/scratch:/scratch" bash  # Extra volume mount
+agent -D --memory=4g claude        # Cap container memory
 ```
 
 ## Reaching host services
 
-From inside the sandbox, `localhost` is the container itself. To reach a service
-running on the host, use `host.docker.internal`. The service must be bound to a
-non-loopback address (e.g. `0.0.0.0`) for the container to reach it.
+Inside the sandbox, `localhost` resolves to the container, not your machine. To reach a
+service running on the host (e.g. a local API or database), use `host.docker.internal`
+instead.
+
+Note that the host service needs to listen on `0.0.0.0`, not `127.0.0.1`. Loopback
+addresses are not reachable from inside the container.
 
 ## Customizing the sandbox
 
-`agent` reads an optional config file at `~/.agent-sandbox/config.sh`. Copy the
-included example to get started:
+Copy the example config and edit it:
 
 ```sh
 cp ~/.agent-sandbox/config.sh.example ~/.agent-sandbox/config.sh
 ```
 
-The config exposes three arrays:
+The config exposes four arrays:
 
-- `APT_PACKAGES` — extra Debian packages baked into the image.
-- `NPM_PACKAGES` — extra global npm packages baked into the image.
-- `MOUNTS` — extra volume mounts applied to every run, in `-v SOURCE:TARGET[:ro]`
-  syntax. Shell expansions like `$HOME` are supported.
+| Array          | When applied   | Description                                             |
+| -------------- | -------------- | ------------------------------------------------------- |
+| `APT_PACKAGES` | `agent update` | Extra Debian packages baked into the image.             |
+| `NPM_PACKAGES` | `agent update` | Extra global npm packages baked into the image.         |
+| `MOUNTS`       | Every run      | Extra volume mounts, in `-v SOURCE:TARGET[:ro]` syntax. |
+| `DOCKER_ARGS`  | Every run      | Raw arguments passed to `docker run`.                   |
 
-Run `agent update` after changing `APT_PACKAGES` or `NPM_PACKAGES` to rebuild
-the image. `MOUNTS` changes take effect on the next run with no rebuild needed.
+`MOUNTS` and `DOCKER_ARGS` take effect on the next run without a rebuild. Changes to
+`APT_PACKAGES` or `NPM_PACKAGES` require running `agent update` to rebuild the image.
