@@ -237,7 +237,6 @@ help | -h | --help)
     usage >&2
     exit 1
     ;;
-
 esac
 
 docker run --rm -it \
