@@ -92,6 +92,16 @@ assert_dockerfile_contains() {
     fi
 }
 
+assert_file_contains() {
+    local file="$1" needle="$2"
+    if ! grep -qF -- "$needle" "$file"; then
+        echo "  expected $file to contain: $needle" >&2
+        echo "  actual file:" >&2
+        sed 's/^/    /' "$file" >&2
+        return 1
+    fi
+}
+
 assert_volume_count() {
     local expected="$1"
     local actual
@@ -192,6 +202,38 @@ test_update_with_no_packages_tags_base_as_latest() {
     assert_log_contains "build --pull --no-cache -t local/agent-sandbox:base"
     assert_log_contains "tag local/agent-sandbox:base local/agent-sandbox:latest"
     assert_log_not_contains "build -f"
+}
+
+test_update_installs_cursor_into_base_image() {
+    "$COMMAND" update || return 1
+    assert_dockerfile_contains "CURSOR_AGENT_HOME=/opt/cursor-agent"
+    assert_dockerfile_contains "https://cursor.com/install"
+    assert_dockerfile_contains 'ln -sf "$CURSOR_AGENT_HOME/.local/bin/cursor-agent" /usr/local/bin/cursor'
+}
+
+test_update_installs_copilot_into_base_image() {
+    "$COMMAND" update || return 1
+    assert_dockerfile_contains "@github/copilot@latest"
+}
+
+test_copilot_command_runs_copilot() {
+    "$COMMAND" copilot --version || return 1
+    assert_log_contains "local/agent-sandbox:latest copilot --version"
+}
+
+test_cursor_command_runs_cursor() {
+    "$COMMAND" cursor --version || return 1
+    assert_log_contains "local/agent-sandbox:latest cursor --version"
+}
+
+test_versions_includes_copilot() {
+    "$COMMAND" versions || return 1
+    assert_log_contains 'echo "copilot:  $(copilot --version 2>/dev/null || echo unavailable)"'
+}
+
+test_versions_uses_cursor_from_path() {
+    "$COMMAND" versions || return 1
+    assert_log_contains 'echo "cursor:   $(cursor --version 2>/dev/null || echo unavailable)"'
 }
 
 test_update_with_apt_packages_writes_overlay() {

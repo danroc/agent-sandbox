@@ -143,9 +143,11 @@ Options:
 Commands:
   bash      [args...]   Open an interactive bash shell (default), forwarding args
   claude    [args...]   Run Claude Code, forwarding args
-  codex     [args...]   Run codex, forwarding args
-  opencode  [args...]   Run opencode, forwarding args
-  pi        [args...]   Run pi, forwarding args
+  codex     [args...]   Run Codex, forwarding args
+  copilot   [args...]   Run Copilot, forwarding args
+  cursor    [args...]   Run Cursor Agent, forwarding args
+  opencode  [args...]   Run OpenCode, forwarding args
+  pi        [args...]   Run Pi, forwarding args
   versions              Print versions of the bundled tools
   update                Pull latest and rebuild the sandbox image from $SANDBOX_ROOT
   help, -h, --help      Show this message
@@ -171,7 +173,7 @@ mkdir -p "$SANDBOX_HOME"
 chmod 700 "$SANDBOX_HOME"
 
 case "$COMMAND" in
-bash | claude | opencode | pi | codex)
+bash | claude | opencode | pi | codex | cursor | copilot)
     ;;
 
 update)
@@ -219,6 +221,8 @@ versions)
 		echo "opencode: $(opencode --version 2>/dev/null || echo unavailable)"
 		echo "pi:       $(pi --version 2>/dev/null || echo unavailable)"
 		echo "codex:    $(codex --version 2>/dev/null || echo unavailable)"
+		echo "copilot:  $(copilot --version 2>/dev/null || echo unavailable)"
+		echo "cursor:   $(cursor --version 2>/dev/null || echo unavailable)"
 	'
     ;;
 

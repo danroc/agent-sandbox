@@ -30,8 +30,15 @@ RUN apt-get update \
 RUN npm install -g \
     @anthropic-ai/claude-code@latest \
     @earendil-works/pi-coding-agent@latest \
+    @github/copilot@latest \
     @openai/codex@latest \
     opencode-ai@latest
+
+ENV CURSOR_AGENT_HOME=/opt/cursor-agent
+RUN mkdir -p "$CURSOR_AGENT_HOME" \
+    && export HOME="$CURSOR_AGENT_HOME" \
+    && curl -fsS https://cursor.com/install | bash \
+    && ln -sf "$CURSOR_AGENT_HOME/.local/bin/cursor-agent" /usr/local/bin/cursor
 
 # --------------------------------------------------------------------------------------
 # Shell prompt

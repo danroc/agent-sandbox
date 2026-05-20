@@ -1,6 +1,7 @@
 # agent-sandbox
 
-Run AI coding agents (Claude Code, OpenCode, Pi, Codex) in a sandboxed Docker container.
+Run AI coding agents (Claude Code, Codex, Copilot, Cursor Agent, OpenCode, Pi) in a
+sandboxed Docker container.
 
 AI agents run as your OS user. Even with built-in permission prompts, the process still
 has access to your SSH keys, credentials, and secrets. This project sandboxes them in a
@@ -34,12 +35,16 @@ agent bash git config --global user.email "you@example.com"
 
 ```sh
 agent                  # Interactive bash shell
+
 agent claude           # Claude Code
-agent opencode         # opencode
-agent pi               # pi
-agent codex            # codex
-agent versions         # Print tool versions
+agent codex            # Codex
+agent copilot          # Copilot
+agent cursor           # Cursor Agent
+agent opencode         # OpenCode
+agent pi               # Pi
+
 agent update           # Rebuild the image
+agent versions         # Print tool versions
 ```
 
 Arguments after the command are forwarded: `agent claude -p "explain repo"`.
