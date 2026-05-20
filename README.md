@@ -72,6 +72,23 @@ instead.
 Note that the host service needs to listen on `0.0.0.0`, not `127.0.0.1`. Loopback
 addresses are not reachable from inside the container.
 
+## FAQ
+
+### How do I complete an agent login that redirects to localhost?
+
+Some agents, including Codex, use a browser-based login flow that finishes by
+redirecting to a local callback URL such as `http://localhost:...`. The exact
+authentication protocol is agent-specific.
+
+For those login flows, run the container with the host network:
+
+```sh
+agent -D --network=host codex
+```
+
+Use host networking only while completing the login when possible. After the login
+finishes, run the agent normally unless you need host networking for another reason.
+
 ## Customizing the sandbox
 
 Copy the example config and edit it:
