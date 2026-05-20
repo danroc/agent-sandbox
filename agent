@@ -194,7 +194,7 @@ update)
         if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
             echo
             echo "RUN apt-get update \\"
-    		echo "    && apt-get install -y --no-install-recommends \\"
+            echo "    && apt-get install -y --no-install-recommends \\"
             echo "        ${APT_PACKAGES[*]} \\"
             echo "    && rm -rf /var/lib/apt/lists/*"
         fi

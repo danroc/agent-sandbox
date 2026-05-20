@@ -22,19 +22,19 @@ setup() {
     SANDBOX_HOME="$SANDBOX_ROOT/home"
     mkdir -p "$SANDBOX_HOME"
 
-	# Provide a Dockerfile so `agent update` has something to "build" from.
+    # Provide a Dockerfile so `agent update` has something to "build" from.
     cp "$REPO_ROOT/Dockerfile" "$SANDBOX_ROOT/Dockerfile"
 
     STUB_BIN="$WORK_DIR/bin"
     mkdir -p "$STUB_BIN"
 
-	cp "$SCRIPT_DIR/stubs/docker" "$STUB_BIN/docker"
+    cp "$SCRIPT_DIR/stubs/docker" "$STUB_BIN/docker"
     cp "$SCRIPT_DIR/stubs/git" "$STUB_BIN/git"
 
     AGENT_TEST_DOCKER_LOG="$WORK_DIR/docker.log"
     AGENT_TEST_DOCKERFILE_LOG="$WORK_DIR/dockerfile.log"
 
-	: > "$AGENT_TEST_DOCKER_LOG"
+    : > "$AGENT_TEST_DOCKER_LOG"
     : > "$AGENT_TEST_DOCKERFILE_LOG"
 
     export HOME SANDBOX_ROOT SANDBOX_HOME
