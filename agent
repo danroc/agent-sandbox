@@ -197,7 +197,7 @@ update)
         step "[3/3] No overlay packages — tagging base as $AGENT_IMAGE"
         docker tag "$BASE_IMAGE" "$AGENT_IMAGE"
     else
-        step "[3/3] Applying overlay"
+        step "[3/3] Applying overlay ($AGENT_IMAGE)"
 
         OVERLAY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-sandbox.XXXXXXXX")"
         trap 'rm -rf "$OVERLAY_DIR"' EXIT
