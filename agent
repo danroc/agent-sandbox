@@ -27,6 +27,14 @@ for mount in "${MOUNTS[@]+"${MOUNTS[@]}"}"; do
     DOCKER_ARGS+=(--volume "$mount")
 done
 
+step() {
+    if [[ -t 2 ]] && command -v tput >/dev/null 2>&1; then
+        echo "$(tput bold; tput setaf 6)==> $*$(tput sgr0)" >&2
+    else
+        echo "==> $*" >&2
+    fi
+}
+
 # Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
 # of picking a random host port. Anything with a ":" or other characters passes through
 # unchanged.
@@ -177,36 +185,48 @@ bash | claude | opencode | pi | codex | cursor | copilot)
     ;;
 
 update)
+    update_started=$SECONDS
+
+    step "[1/3] Pulling sandbox repo ($SANDBOX_ROOT)"
     git -C "$SANDBOX_ROOT" pull --ff-only
+
+    step "[2/3] Building base image ($BASE_IMAGE)"
     docker build --pull --no-cache -t "$BASE_IMAGE" "$SANDBOX_ROOT"
 
     if [[ ${#APT_PACKAGES[@]} -eq 0 && ${#NPM_PACKAGES[@]} -eq 0 ]]; then
+        step "[3/3] No overlay packages — tagging base as $AGENT_IMAGE"
         docker tag "$BASE_IMAGE" "$AGENT_IMAGE"
-        exit 0
+    else
+        step "[3/3] Applying overlay"
+
+        OVERLAY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-sandbox.XXXXXXXX")"
+        trap 'rm -rf "$OVERLAY_DIR"' EXIT
+
+        OVERLAY_DOCKERFILE="$OVERLAY_DIR/Dockerfile"
+        {
+            echo "FROM $BASE_IMAGE"
+            echo
+            echo "USER root"
+            if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
+                echo
+                echo "RUN apt-get update \\"
+                echo "    && apt-get install -y --no-install-recommends \\"
+                echo "        ${APT_PACKAGES[*]} \\"
+                echo "    && rm -rf /var/lib/apt/lists/*"
+            fi
+            if [[ ${#NPM_PACKAGES[@]} -gt 0 ]]; then
+                echo
+                echo "RUN npm install -g ${NPM_PACKAGES[*]}"
+            fi
+        } > "$OVERLAY_DOCKERFILE"
+
+        docker build --no-cache \
+            -t "$AGENT_IMAGE" \
+            -f "$OVERLAY_DOCKERFILE" \
+            "$OVERLAY_DIR"
     fi
 
-    OVERLAY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-sandbox.XXXXXXXX")"
-    trap 'rm -rf "$OVERLAY_DIR"' EXIT
-
-    OVERLAY_DOCKERFILE="$OVERLAY_DIR/Dockerfile"
-    {
-        echo "FROM $BASE_IMAGE"
-        echo
-        echo "USER root"
-        if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
-            echo
-            echo "RUN apt-get update \\"
-            echo "    && apt-get install -y --no-install-recommends \\"
-            echo "        ${APT_PACKAGES[*]} \\"
-            echo "    && rm -rf /var/lib/apt/lists/*"
-        fi
-        if [[ ${#NPM_PACKAGES[@]} -gt 0 ]]; then
-            echo
-            echo "RUN npm install -g ${NPM_PACKAGES[*]}"
-        fi
-    } > "$OVERLAY_DOCKERFILE"
-
-    docker build --no-cache -t "$AGENT_IMAGE" -f "$OVERLAY_DOCKERFILE" "$OVERLAY_DIR"
+    step "Done in $((SECONDS - update_started))s"
     exit 0
     ;;
 
