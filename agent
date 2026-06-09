@@ -47,7 +47,7 @@ patch_localhost() {
         fi
 
         perl -pi \
-            -e 's/\blocalhost\b/host.docker.internal/g' \
+            -e 's/\blocalhost\b/host.docker.internal/g;' \
             -e 's/\b127\.0\.0\.1\b/host.docker.internal/g' \
             "$f"
 
