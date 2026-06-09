@@ -31,3 +31,12 @@ DOCKER_ARGS=(
     # --network=host
     # --device=/dev/ttyUSB0
 )
+
+# Optional pre-run hook: a function called on the HOST just before `docker run`.
+# Receives <command> [args...] as arguments. Use it for any host-side setup.
+#
+# pre_run() {
+#     patch_localhost \
+#         "$SANDBOX_HOME/.pi/agent/models.json" \
+#         "$SANDBOX_HOME/.config/opencode/opencode.json"
+# }

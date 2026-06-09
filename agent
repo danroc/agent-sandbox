@@ -35,6 +35,26 @@ step() {
     fi
 }
 
+# patch_localhost FILE...
+#
+# Rewrites localhost/127.0.0.1 -> host.docker.internal in-place on the HOST.
+patch_localhost() {
+    local f
+    for f in "$@"; do
+        # Ignore if the file isn't readable, or doesn't contain localhost or 127.0.0.1.
+        if [[ ! -r "$f" ]] || ! grep -qE '\blocalhost\b|\b127\.0\.0\.1\b' "$f"; then
+            continue
+        fi
+
+        perl -pi \
+            -e 's/\blocalhost\b/host.docker.internal/g' \
+            -e 's/\b127\.0\.0\.1\b/host.docker.internal/g' \
+            "$f"
+
+        step "Patched localhost -> host.docker.internal in $f"
+    done
+}
+
 # Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
 # of picking a random host port. Anything with a ":" or other characters passes through
 # unchanged.
@@ -258,6 +278,11 @@ help | -h | --help)
     exit 1
     ;;
 esac
+
+# User-defined hook in config.sh; called on the host before docker run.
+if declare -F pre_run >/dev/null; then
+    pre_run "$COMMAND" "$@"
+fi
 
 docker run --rm -it \
     --name "agent-${PROJECT_NAME}-$$" \
