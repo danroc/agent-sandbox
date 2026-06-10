@@ -126,17 +126,6 @@ assert_log_order() {
     fi
 }
 
-assert_overlay_run_count() {
-    local expected="$1"
-    local actual
-    actual="$(awk 'after && /^RUN /{c++} /^---$/{after=1} END{print c+0}' "$AGENT_TEST_DOCKERFILE_LOG")"
-    if [[ "$actual" -ne "$expected" ]]; then
-        echo "  expected $expected RUN lines in overlay Dockerfile, got $actual" >&2
-        sed 's/^/    /' "$AGENT_TEST_DOCKERFILE_LOG" >&2
-        return 1
-    fi
-}
-
 # --- Tests ---
 
 test_volume_flag_appends_to_docker_run() {
@@ -197,21 +186,20 @@ EOF
     assert_log_order "--volume /host/cfg:/cfg" "--volume /host/cli:/cli"
 }
 
-test_update_with_no_packages_tags_base_as_latest() {
+test_update_with_no_packages_builds_latest_directly() {
     "$COMMAND" update || return 1
-    assert_log_contains "build --pull --no-cache -t local/agent-sandbox:base"
-    assert_log_contains "tag local/agent-sandbox:base local/agent-sandbox:latest"
-    assert_log_not_contains "build -f"
+    assert_log_contains "build --pull --no-cache --build-arg APT_PACKAGES= --build-arg NPM_PACKAGES= -t local/agent-sandbox:latest"
+    assert_log_not_contains "tag"
 }
 
-test_update_installs_cursor_into_base_image() {
+test_update_installs_cursor() {
     "$COMMAND" update || return 1
     assert_dockerfile_contains "CURSOR_AGENT_HOME=/opt/cursor-agent"
     assert_dockerfile_contains "https://cursor.com/install"
     assert_dockerfile_contains 'ln -sf "$CURSOR_AGENT_HOME/.local/bin/cursor-agent" /usr/local/bin/cursor'
 }
 
-test_update_installs_copilot_into_base_image() {
+test_update_installs_copilot() {
     "$COMMAND" update || return 1
     assert_dockerfile_contains "@github/copilot@latest"
 }
@@ -236,37 +224,31 @@ test_versions_uses_cursor_from_path() {
     assert_log_contains 'echo "cursor:   $(cursor --version 2>/dev/null || echo unavailable)"'
 }
 
-test_update_with_apt_packages_writes_overlay() {
+test_update_with_apt_packages_passes_build_arg() {
     cat >"$SANDBOX_ROOT/config.sh" <<'EOF'
 APT_PACKAGES=(tmux htop)
 EOF
     "$COMMAND" update || return 1
-    assert_log_contains "build --pull --no-cache -t local/agent-sandbox:base"
-    assert_dockerfile_contains "FROM local/agent-sandbox:base"
-    assert_dockerfile_contains "apt-get install -y --no-install-recommends"
-    assert_dockerfile_contains "tmux htop"
-    assert_log_not_contains "tag local/agent-sandbox:base local/agent-sandbox:latest"
+    assert_log_contains "--build-arg APT_PACKAGES=tmux htop"
+    assert_log_not_contains "tag"
 }
 
-test_update_with_npm_packages_writes_overlay() {
+test_update_with_npm_packages_passes_build_arg() {
     cat >"$SANDBOX_ROOT/config.sh" <<'EOF'
 NPM_PACKAGES=(yarn pnpm)
 EOF
     "$COMMAND" update || return 1
-    assert_dockerfile_contains "FROM local/agent-sandbox:base"
-    assert_dockerfile_contains "npm install -g yarn pnpm"
+    assert_log_contains "--build-arg NPM_PACKAGES=yarn pnpm"
 }
 
-test_update_with_both_apt_and_npm_writes_both() {
+test_update_with_both_apt_and_npm_passes_both_build_args() {
     cat >"$SANDBOX_ROOT/config.sh" <<'EOF'
 APT_PACKAGES=(tmux)
 NPM_PACKAGES=(yarn)
 EOF
     "$COMMAND" update || return 1
-    assert_dockerfile_contains "apt-get install -y --no-install-recommends"
-    assert_dockerfile_contains "tmux"
-    assert_dockerfile_contains "npm install -g yarn"
-    assert_overlay_run_count 2
+    assert_log_contains "--build-arg APT_PACKAGES=tmux"
+    assert_log_contains "--build-arg NPM_PACKAGES=yarn"
 }
 
 while IFS= read -r fn; do

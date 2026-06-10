@@ -4,7 +4,6 @@ set -euo pipefail
 
 SANDBOX_ROOT="$HOME/.agent-sandbox"
 SANDBOX_HOME="$SANDBOX_ROOT/home"
-BASE_IMAGE="local/agent-sandbox:base"
 AGENT_IMAGE="local/agent-sandbox:latest"
 
 CONFIG_FILE="$SANDBOX_ROOT/config.sh"
@@ -207,44 +206,15 @@ bash | claude | opencode | pi | codex | cursor | copilot)
 update)
     update_started=$SECONDS
 
-    step "[1/3] Pulling sandbox repo ($SANDBOX_ROOT)"
+    step "[1/2] Pulling sandbox repo ($SANDBOX_ROOT)"
     git -C "$SANDBOX_ROOT" pull --ff-only
 
-    step "[2/3] Building base image ($BASE_IMAGE)"
-    docker build --pull --no-cache -t "$BASE_IMAGE" "$SANDBOX_ROOT"
-
-    if [[ ${#APT_PACKAGES[@]} -eq 0 && ${#NPM_PACKAGES[@]} -eq 0 ]]; then
-        step "[3/3] No overlay packages — tagging base as $AGENT_IMAGE"
-        docker tag "$BASE_IMAGE" "$AGENT_IMAGE"
-    else
-        step "[3/3] Applying overlay ($AGENT_IMAGE)"
-
-        OVERLAY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-sandbox.XXXXXXXX")"
-        trap 'rm -rf "$OVERLAY_DIR"' EXIT
-
-        OVERLAY_DOCKERFILE="$OVERLAY_DIR/Dockerfile"
-        {
-            echo "FROM $BASE_IMAGE"
-            echo
-            echo "USER root"
-            if [[ ${#APT_PACKAGES[@]} -gt 0 ]]; then
-                echo
-                echo "RUN apt-get update \\"
-                echo "    && apt-get install -y --no-install-recommends \\"
-                echo "        ${APT_PACKAGES[*]} \\"
-                echo "    && rm -rf /var/lib/apt/lists/*"
-            fi
-            if [[ ${#NPM_PACKAGES[@]} -gt 0 ]]; then
-                echo
-                echo "RUN npm install -g ${NPM_PACKAGES[*]}"
-            fi
-        } > "$OVERLAY_DOCKERFILE"
-
-        docker build --no-cache \
-            -t "$AGENT_IMAGE" \
-            -f "$OVERLAY_DOCKERFILE" \
-            "$OVERLAY_DIR"
-    fi
+    step "[2/2] Building image ($AGENT_IMAGE)"
+    docker build --pull --no-cache \
+        --build-arg "APT_PACKAGES=${APT_PACKAGES[*]}" \
+        --build-arg "NPM_PACKAGES=${NPM_PACKAGES[*]}" \
+        -t "$AGENT_IMAGE" \
+        "$SANDBOX_ROOT"
 
     step "Done in $((SECONDS - update_started))s"
     exit 0

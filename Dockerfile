@@ -1,5 +1,8 @@
 FROM node:26-bookworm
 
+ARG APT_PACKAGES=""
+ARG NPM_PACKAGES=""
+
 # --------------------------------------------------------------------------------------
 # System packages
 # --------------------------------------------------------------------------------------
@@ -21,6 +24,7 @@ RUN apt-get update \
         python3      \
         python3-pip  \
         python3-venv \
+        $APT_PACKAGES \
     && rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------------------------------------------------
@@ -32,7 +36,8 @@ RUN npm install -g \
     @earendil-works/pi-coding-agent@latest \
     @github/copilot@latest \
     @openai/codex@latest \
-    opencode-ai@latest
+    opencode-ai@latest \
+    $NPM_PACKAGES
 
 ENV CURSOR_AGENT_HOME=/opt/cursor-agent
 RUN mkdir -p "$CURSOR_AGENT_HOME" \
