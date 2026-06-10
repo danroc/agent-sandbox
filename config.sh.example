@@ -9,13 +9,12 @@
 # Extra Debian packages baked into the image. Applied on `agent update`.
 APT_PACKAGES=(
     # tmux
-    # htop
+    # vim
 )
 
 # Extra npm packages installed globally. Applied on `agent update`.
 NPM_PACKAGES=(
-    # yarn
-    # pnpm
+    # corepack
 )
 
 # Extra mounts applied to every `agent` run. Docker -v syntax:
