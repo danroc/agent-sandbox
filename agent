@@ -211,8 +211,8 @@ update)
 
     step "[2/2] Building image ($AGENT_IMAGE)"
     docker build --pull --no-cache \
-        --build-arg "APT_PACKAGES=${APT_PACKAGES[*]}" \
-        --build-arg "NPM_PACKAGES=${NPM_PACKAGES[*]}" \
+        --build-arg "APT_PACKAGES=${APT_PACKAGES[*]+"${APT_PACKAGES[*]}"}" \
+        --build-arg "NPM_PACKAGES=${NPM_PACKAGES[*]+"${NPM_PACKAGES[*]}"}" \
         -t "$AGENT_IMAGE" \
         "$SANDBOX_ROOT"
 
