@@ -10,20 +10,21 @@ ARG NPM_PACKAGES=""
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         # Claude Code sandboxing
-        bubblewrap   \
-        socat        \
+        bubblewrap \
+        socat \
         # Terminal support
         ncurses-term \
         # Common utilities
-        curl         \
-        fd-find      \
-        git          \
-        jq           \
-        ripgrep      \
+        curl \
+        fd-find \
+        git \
+        jq \
+        ripgrep \
         # Python environment
-        python3      \
-        python3-pip  \
+        python3 \
+        python3-pip \
         python3-venv \
+        # Additional packages
         $APT_PACKAGES \
     && rm -rf /var/lib/apt/lists/*
 
@@ -32,11 +33,13 @@ RUN apt-get update \
 # --------------------------------------------------------------------------------------
 
 RUN npm install -g \
+    # Agents
     @anthropic-ai/claude-code@latest \
     @earendil-works/pi-coding-agent@latest \
     @github/copilot@latest \
     @openai/codex@latest \
     opencode-ai@latest \
+    # Additional packages
     $NPM_PACKAGES
 
 ENV CURSOR_AGENT_HOME=/opt/cursor-agent
