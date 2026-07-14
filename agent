@@ -222,7 +222,7 @@ update)
     step "[1/2] Pulling sandbox repo ($SANDBOX_ROOT)"
     git -C "$SANDBOX_ROOT" pull --ff-only
 
-    step "[2/2] Building image ($AGENT_IMAGE)"
+    step "[2/2] Building sandbox image"
     build_image --pull --no-cache
 
     step "Done in $((SECONDS - update_started))s"
@@ -259,7 +259,7 @@ help | -h | --help)
 esac
 
 if ! image_available; then
-    step "Image $AGENT_IMAGE not found, building it now"
+    step "Sandbox image not found, building it now"
     build_image
 fi
 
