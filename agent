@@ -54,6 +54,19 @@ patch_localhost() {
     done
 }
 
+image_available() {
+    docker image inspect "$AGENT_IMAGE" >/dev/null 2>&1
+}
+
+# build_image [extra docker-build args...]
+build_image() {
+    docker build "$@" \
+        --build-arg "APT_PACKAGES=${APT_PACKAGES[*]+"${APT_PACKAGES[*]}"}" \
+        --build-arg "NPM_PACKAGES=${NPM_PACKAGES[*]+"${NPM_PACKAGES[*]}"}" \
+        -t "$AGENT_IMAGE" \
+        "$SANDBOX_ROOT"
+}
+
 # Bare-digit specs (e.g. "8000") map host:container 1-to-1, overriding docker's default
 # of picking a random host port. Anything with a ":" or other characters passes through
 # unchanged.
@@ -210,11 +223,7 @@ update)
     git -C "$SANDBOX_ROOT" pull --ff-only
 
     step "[2/2] Building image ($AGENT_IMAGE)"
-    docker build --pull --no-cache \
-        --build-arg "APT_PACKAGES=${APT_PACKAGES[*]+"${APT_PACKAGES[*]}"}" \
-        --build-arg "NPM_PACKAGES=${NPM_PACKAGES[*]+"${NPM_PACKAGES[*]}"}" \
-        -t "$AGENT_IMAGE" \
-        "$SANDBOX_ROOT"
+    build_image --pull --no-cache
 
     step "Done in $((SECONDS - update_started))s"
     exit 0
@@ -248,6 +257,11 @@ help | -h | --help)
     exit 1
     ;;
 esac
+
+if ! image_available; then
+    step "Image $AGENT_IMAGE not found, building it now"
+    build_image
+fi
 
 # User-defined hook in config.sh; called on the host before docker run.
 if declare -F pre_run >/dev/null; then
